@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='stylesheet.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <title>HR presentie</title>
+</head>
+<body>
+    <div class="register">
+        <img src="/static/Hogeschool-Rotterdam-logo.webp" alt="Hogeschool Rotterdam logo" id="start-logo">
+        <h1 id="page-text">Registeer</h1>
+        <p>Docent(Mark): 901</p>
+        <p>Leerling 1A: 105-130</p>
+        <p>Leerling 1B: 131-160</p>
+        <p>Leerling 1C: 161-190</p>
+        <p>Leerling 1D: 190-220</p>
+        <p>Alle wachtwoorden: 1234567890</p>
+        <form method="post" action="" autocomplete="off">
+            {{ form.hidden_tag() }}
+            <div class="form-field">
+                {{ form.username.label }}
+                {{ form.username }}
+            </div>
+            <div class="form-field">
+                {{ form.password.label }}
+                {{ form.password }}
+            </div>
+        {% if error %}
+            <div class="error"><strong>Error:</strong> {{ error }} </div>
+        {% endif %}
+            <div class="form-submit">
+                {{ form.submit }}
+            </div>
+        </form>
+        <div class="redirect">
+            <a href="{{ url_for('login') }}">Heb je al een account? Log in!</a>
+        </div> 
+    </div>
+</body>
+</html>

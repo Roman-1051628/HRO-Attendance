@@ -1,0 +1,103 @@
+{% extends "docentindex.html" %}
+{% block qr %}
+<div class="qr-button">
+    <img src="{{img}}", id="qrcode-img">
+    <button class="statebtn" onclick="submit_entry()">Sluit Entry</button>
+</div>    
+{% endblock %}
+
+{% block aanwezigheid %}
+<div class="nochange">
+    <p>Studenten in les: {{  lesnaam  }}</p>
+    <p id="counter"></p>
+    <table>
+        <thead>
+            <tr>
+                <th>Naam</th>
+                <th>Studentnummer</th>
+                <th>Aanwezigheid</th>
+            </tr>
+        </thead>
+        <tbody id="aanwezigheid">
+
+        </tbody>
+    </table>
+</div>
+<script>
+    const fetch_aanwezigheid = async () => {
+    try {
+        const response = await fetch('/les/{{les_id}}/getaanwezigheid', {
+            method: 'GET',
+            headers: {
+                'accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        });
+        const data = await response.json();
+        console.log(data);
+        if (response.error) {
+            console.log("Some error with fetching JSON from highscore server")
+        } else if (!response.ok) {
+            console.log("Some non-200 HTTP response code")
+        } else {
+            set_aanwezigheid(data)
+        }
+    } catch (e) {
+        console.log("Some error with fetching JSON from highscore server: " + e)
+    }
+    }
+        
+    function set_aanwezigheid(package) {
+    let aanwezigheid = document.getElementById("aanwezigheid")
+    let aanwezigcount = document.getElementById("counter")
+    aanwezigcount.replaceChildren()
+    aanwezigcount.innerHTML +=`
+        <p>Aantal aanwezigen: ${package[0]["aanwezig"]}</p> 
+        `
+    package = package.slice(1)
+    aanwezigheid.replaceChildren()
+    package.forEach(function (aanwezig) {
+        if (aanwezig["aanwezigheid"] == 1) {
+            aanwezig["aanwezigheid"] = "Aanwezig"}
+        else if (aanwezig["aanwezigheid"] == 0) {
+            aanwezig["aanwezigheid"] = "Afwezig"}
+        aanwezigheid.innerHTML += `
+        <tr>
+            <td>${aanwezig["naam"]}</td>
+            <td>${aanwezig["studentnummer"]}</td>
+            <td>${aanwezig["aanwezigheid"]}</td>
+        </tr>
+        `
+        }) 
+    
+    }
+    $("form").submit(function(e) {
+    e.preventDefault();
+    });
+    function submit_entry(){
+        try{
+            var entry = {
+                state: "closed"
+            };
+
+            fetch('/les/{{les_id}}/setentry',{
+                method: 'POST',
+                body: JSON.stringify(entry),
+                headers: {
+                    "accept": "application/json",
+                    "content-type": "application/json"
+                }
+            })
+            var statebtn = document.querySelector(".statebtn")
+            statebtn.innerHTML = "Les Gesloten!"
+            } catch (error){
+                console.log(error);
+            }
+
+    }
+
+    fetch_aanwezigheid()
+    let interval_id = setInterval(fetch_aanwezigheid, 4000)
+
+</script>
+{% endblock %}

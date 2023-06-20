@@ -1,0 +1,178 @@
+{% extends "docentindex.html" %}
+
+{% block docent %}
+    <h1>Dit wordt het overzicht van de docenten</h1>
+        <article class="docent_header">
+            <h2>Overzicht van uw lessen</h2>
+            <button class="add_button" id="add_lesson">+</button>
+        </article>
+        <article id="les_form" style="display: none;">
+            <div class="addform">
+                <p>Vak:</p>
+                <select name="vakken" id="vak" class="searchbar">
+                    {% for vak in vakken %}
+                    <option value="{{vak}}">{{vak}}</option>
+                    {% endfor %}
+                </select>
+                <p>Docent:</p>
+                <select name="docenten" id="docent" class="searchbar">
+                    {% for docent in docenten %}
+                    <option value="{{docent}}">{{docent}}</option>
+                    {% endfor %}
+                </select>
+                <p>Klassen</p>
+                <ul id="klassenlist">
+                    {% for klas in klassen%}
+                    <li class="klasitem">
+                        <label for="{{klas}}">{{klas}}</label>
+                        <input id="{{klas}}" type="checkbox" name="klas" value="{{klas}}">
+                    </li>
+                    {% endfor %}
+                </ul>
+                <a href="#" onclick="visibility_toggle('studentfield')" class="add_studenten">Extra Studenten</a>
+                <article id="studentfield"  style="display: none;">
+                    <input type="text" placeholder="Search.." id="searchbar"  class="searchbar" onkeyup="Search()">
+                    <ul id="namelist">
+                        {% for student in studenten%}
+                        <li><a href="#" id="{{student}}" onclick="addstudent(this)">{{student}}</a></li>
+                        {% endfor %}
+                    </ul>
+                </article>
+                <p>Tijdstip:</p>
+                <input type="datetime-local" id="tijdstip" class="searchbar"><br>
+                <button id="newlesson" class="lessonmaker">Maak nieuwe les</button>
+            </div>
+        </article>
+        <table>
+            <thead>
+                <tr>
+                    <th>Vak</th>
+                    <th>Datum</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="lessen">
+        
+            </tbody>
+        </table>
+
+
+    <script>
+        const extrastudenten = []
+        function addstudent(student){
+            extrastudenten.push(student.id)
+            document.getElementById(student.id).style.display = "none"
+            console.log(extrastudenten)
+        }
+
+        const fetch_scores = async () => {
+        try {
+            const response = await fetch('/getlessen', {
+                method: 'GET',
+                headers: {
+                    'accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+            const data = await response.json();
+            //console.log(data);
+            if (response.error) {
+                console.log("Some error with fetching JSON from highscore server")
+            } else if (!response.ok) {
+                console.log("Some non-200 HTTP response code")
+            } else {
+                set_lessen(data)
+            }
+        } catch (e) {
+            console.log("Some error with fetching JSON from highscore server: " + e)
+        }
+    }
+
+    function set_lessen(les) {
+        let lessen = document.getElementById("lessen")
+        lessen.replaceChildren()
+        les.forEach(function (student) {
+            lessen.innerHTML += `
+            <tr>
+                <td>${student["vak"]}</td>
+                <td>${student["datum"]}</td>
+                <td><button class="button1"><a href="/les/${student["les_id"]}/aanwezigheid">Bekijk</a></button></td>
+            </tr>
+            `
+            })
+        }
+
+        const add_lesson= async ()  => {
+        try {
+            var lesklassen = []
+            var checkboxes = document.getElementsByName("klas");
+            for(var i = 0; i < checkboxes.length; i++)  {  
+                if(checkboxes[i].checked)  
+                lesklassen.push(checkboxes[i].id)
+            } 
+            console.log(extrastudenten)
+            payload = {
+                "vak": $("#vak").val(),
+                "docent": $("#docent").val(),
+                "datum": $("#tijdstip").val(),
+                "klassen": JSON.stringify(lesklassen),
+                "studenten": JSON.stringify(extrastudenten),
+            }
+            console.log(payload)
+        const response = await fetch("/addlesson", {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(fetch_scores);
+        } catch (e) {
+            console.log("Some error with fetching JSON from highscore server: " + e)
+        }
+    }
+    
+    function show_form(){
+        let les_form = document.getElementById("les_form")
+        let add_lesson = document.getElementById("add_lesson")
+        if (les_form.style.display === "none"){
+            add_lesson.innerHTML = "-"
+            return les_form.style.display = "block"
+        } else{
+            add_lesson.innerHTML = "+"
+            return les_form.style.display = "none"
+        }
+    }
+
+    function visibility_toggle(field_id){
+        toggle_item = document.getElementById(field_id)
+      if (toggle_item.style.display === "none"){
+            return toggle_item.style.display = "block"
+        } else{
+            return toggle_item.style.display = "none"
+        }  
+    }
+    
+    function Search() {
+    var input, filter, ul, li, a, i;
+    input = document.getElementById("searchbar");
+    filter = input.value.toUpperCase();
+    ul = document.getElementById("namelist");
+    li = ul.getElementsByTagName("li");
+    for (i = 0; i < li.length; i++) {
+        a = li[i].getElementsByTagName("a")[0];
+        if (a.innerHTML.toUpperCase().indexOf(filter) > -1) {
+            li[i].style.display = "";
+        } else {
+            li[i].style.display = "none";
+        }
+    }
+}
+
+    fetch_scores()
+    let interval_id = setInterval(fetch_scores, 2000)
+    document.getElementById("add_lesson").addEventListener("click", show_form)
+    document.getElementById("newlesson").addEventListener("click", add_lesson)
+    </script>
+
+            
+{% endblock %}
